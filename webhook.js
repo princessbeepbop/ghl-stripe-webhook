@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+const Stripe = require('stripe');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -39,7 +39,7 @@ Submitted by: ${data.contactName}
 wait for review`;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Only accept POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -73,6 +73,63 @@ export default async function handler(req, res) {
       // Create new customer (use escrow officer if available, else signer)
       customer = await stripe.customers.create({
         email: customerEmail,
+        name: data.companyName || data.contactName || data.signerName,
+        phone: data.phone,
+        description: `Escrow Officer: ${data.contactName} | Signer: ${data.signerName} | Company: ${data.companyName}`,
+      });
+    }
+
+    // Step 2: Create draft invoice
+    const invoice = await stripe.invoices.create({
+      customer: customer.id,
+      description: `RON - ${data.referenceNumber}`,
+      metadata: {
+        ghl_reference: data.referenceNumber,
+        property_address: data.propertyAddress,
+        closing_type: data.closingType,
+        company_name: data.companyName,
+      },
+    });
+
+    // Step 3: Add line item to invoice
+    await stripe.invoiceItems.create({
+      customer: customer.id,
+      invoice: invoice.id,
+      description: data.closingType,
+      amount: Math.round(data.fee * 100), // Convert dollars to cents
+    });
+
+    // Step 4: Finalize the invoice (convert to draft status)
+    const finalizedInvoice = await stripe.invoices.update(invoice.id, {
+      description: `RON - ${data.referenceNumber}`,
+      custom_fields: [
+        {
+          name: 'Notarization Details',
+          value: buildMemo(data),
+        },
+      ],
+    });
+
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      message: 'Invoice created successfully',
+      invoice: {
+        id: finalizedInvoice.id,
+        customerId: customer.id,
+        amount: Math.round(data.fee * 100),
+        status: finalizedInvoice.status,
+        link: finalizedInvoice.hosted_invoice_url,
+      },
+    });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    return res.status(500).json({
+      error: error.message,
+      type: error.type,
+    });
+  }
+}        email: customerEmail,
         name: data.companyName || data.contactName || data.signerName,
         phone: data.phone,
         description: `Escrow Officer: ${data.contactName} | Signer: ${data.signerName} | Company: ${data.companyName}`,
