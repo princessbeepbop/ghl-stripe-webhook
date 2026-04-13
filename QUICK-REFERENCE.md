@@ -163,4 +163,3 @@ Send message to Slack when invoice created (requires Slack webhook URL)
 2. Check Vercel logs for errors
 3. Verify Stripe secret key is correct
 4. Confirm GHL field names match webhook expectations
-
