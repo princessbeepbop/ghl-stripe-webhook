@@ -10,10 +10,6 @@
     "stripe": "^14.25.0"
   },
   "engines": {
-    "node": "18.x"
-  },
-  "main": "ghl-stripe-webhook.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "node": "24.x"
+  }
 }
