@@ -1,0 +1,19 @@
+{
+  "name": "ghl-stripe-webhook",
+  "version": "1.0.0",
+  "description": "GoHighLevel form submission → Stripe invoice webhook",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "stripe": "^14.25.0"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "main": "ghl-stripe-webhook.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
